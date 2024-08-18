@@ -1,9 +1,62 @@
 package twitterscraper
 
 import (
+	"io"
 	"net/url"
 	"strings"
 )
+
+type FollowAction int
+
+const (
+	Follow FollowAction = iota + 1
+	Unfollow
+)
+
+func (s *Scraper) FollowUser(user string, followAction FollowAction) error {
+	var baseUrl string
+	if followAction == Follow {
+		baseUrl = "https://twitter.com/i/api/1.1/friendships/create.json"
+	} else {
+		baseUrl = "https://twitter.com/i/api/1.1/friendships/destroy.json"
+	}
+
+	userID, err := s.GetUserIDByScreenName(user)
+	if err != nil {
+		return err
+	}
+
+	req, err := s.newRequest("POST", baseUrl)
+	if err != nil {
+		return err
+	}
+
+	params := url.Values{
+		"include_profile_interstitial_type": {"1"},
+		"include_blocking":                  {"1"},
+		"include_blocked_by":                {"1"},
+		"include_followed_by":               {"1"},
+		"include_want_retweets":             {"1"},
+		"include_mute_edge":                 {"1"},
+		"include_can_dm":                    {"1"},
+		"include_can_media_tag":             {"1"},
+		"include_ext_is_blue_verified":      {"1"},
+		"include_ext_verified_type":         {"1"},
+		"include_ext_profile_image_shape":   {"1"},
+		"skip_status":                       {"1"},
+		"user_id":                           {userID},
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Body = io.NopCloser(strings.NewReader(params.Encode()))
+
+	err = s.RequestAPI(req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // FetchFollowing gets following profiles list for a given user, via the Twitter frontend GraphQL API.
 func (s *Scraper) FetchFollowing(user string, maxUsersNbr int, cursor string) ([]*Profile, string, error) {

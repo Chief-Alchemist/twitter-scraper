@@ -9,7 +9,7 @@
     "CSRF_TOKEN": "",
 
     // Test auth with cookies
-    "COOKIES": "",
+    "COOKIES": "cookies.json",
 
     // Test login & password
     "TWITTER_USERNAME": "",

@@ -38,8 +38,10 @@ func init() {
 	}
 
 	if cookies != "" {
-		var parsedCookies []*http.Cookie
-		json.NewDecoder(strings.NewReader(cookies)).Decode(&parsedCookies)
+		parsedCookies, err := loadCookiesFromFile(cookies)
+		if err != nil {
+			panic(fmt.Sprintf("loadCookiesFromFile() error = %v", err))
+		}
 		testScraper.SetCookies(parsedCookies)
 		if !testScraper.IsLoggedIn() {
 			panic("Invalid Cookies")
@@ -142,4 +144,19 @@ func TestLoginOpenAccount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoginOpenAccount() error = %v", err)
 	}
+}
+
+func loadCookiesFromFile(filePath string) ([]*http.Cookie, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var cookies []*http.Cookie
+	if err := json.NewDecoder(file).Decode(&cookies); err != nil {
+		return nil, err
+	}
+
+	return cookies, nil
 }
